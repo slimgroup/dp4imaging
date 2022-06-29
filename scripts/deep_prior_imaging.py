@@ -14,7 +14,7 @@ from tqdm import tqdm
 from dp4imaging.deep_prior import DeepPrior
 from dp4imaging.psgld import PreconditionedSGLD
 from dp4imaging.setup_experiment import SeismicSetup
-from dp4imaging.utils import setup_sample_file, save_checkpoint, decay_fn
+from dp4imaging.utils import decay_fn, save_checkpoint, setup_sample_file
 
 
 class DeepPriorImaging(object):
@@ -63,8 +63,9 @@ class DeepPriorImaging(object):
         self.obj_log = []
         self.error_log = []
 
-    def nll(self, d_pred: torch.Tensor, d_obs: torch.Tensor,
-            sigma: float) -> torch.Tensor:
+    def negative_log_likelihood(self, d_pred: torch.Tensor,
+                                d_obs: torch.Tensor,
+                                sigma: float) -> torch.Tensor:
         """Negative-log likelihood under Gaussian noise assumption.
 
         Args:
@@ -135,9 +136,9 @@ class DeepPriorImaging(object):
                 d_pred = forward_op(dm_est)
 
                 # Compute the negative-log likelihood.
-                obj = self.nll(d_pred,
-                               torch.from_numpy(d_obs[idx]).to(self.device),
-                               args.sigma)
+                obj = self.negative_log_likelihood(
+                    d_pred,
+                    torch.from_numpy(d_obs[idx]).to(self.device), args.sigma)
 
                 # Compute the gradient of negative-log likelihood with respect
                 # to deep prior weights. The gradient contribution of the
@@ -179,8 +180,8 @@ class DeepPriorImaging(object):
 
         # Print current objective value.
         pb.set_postfix(itr=f'{itr + 1}/{args.max_itr}',
-                       obj=f'{obj}',
-                       misfit=f'{model_error}')
+                       obj=f'{obj:.4f}',
+                       misfit=f'{model_error:.4f}')
 
         # Append current objective value and perdition error to log.
         self.obj_log.append(obj)

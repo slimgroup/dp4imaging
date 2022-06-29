@@ -1,17 +1,20 @@
-import os
-import torch
-import h5py
-import numpy as np
-from scipy import signal
-from tqdm import tqdm
+from devito import configuration
 from examples.seismic import Model, AcquisitionGeometry, TimeAxis, RickerSource
 from examples.seismic.acoustic import AcousticWaveSolver
-from devito import configuration
+import h5py
+import numpy as np
+import os
+from scipy import signal
+import torch
+from tqdm import tqdm
+
 from dp4imaging.devito_layer import ForwardBorn
-from dp4imaging.utils import get_velocity  #, get_data_file
+from dp4imaging.project_path import datadir
+from dp4imaging.utils import get_velocity
 import logging
 
 configuration['log-level'] = 'WARNING'
+logging.basicConfig(level=logging.INFO)
 
 
 class ForwardBornLayer(torch.nn.Module):
@@ -139,7 +142,7 @@ class SeismicSetup(object):
         """
         d_lin = simulate_sequential_data(self.sigma)[...]
 
-        sim_data_path = os.path.join(os.path.expanduser('~'), 'data/',
+        sim_data_path = os.path.join(datadir("observed_data"),
                                      'sim_src_data.h5')
         sim_data_file = h5py.File(sim_data_path, 'w')
         sim_data = sim_data_file.create_dataset(
@@ -162,8 +165,7 @@ def simulate_sequential_data(sigma):
     imaging_setup = SeismicSetup('cpu', sigma, sim_source=False)
     dm = imaging_setup.dm
 
-    data_path = os.path.join(os.path.expanduser('~'), 'data/',
-                             'observed_data.h5')
+    data_path = os.path.join(datadir("observed_data"), 'observed_data.h5')
     data_file = h5py.File(data_path, 'w')
     d_lin = data_file.create_dataset(
         'data', [imaging_setup.nsrc, imaging_setup.nt, imaging_setup.nrec],
@@ -176,7 +178,6 @@ def simulate_sequential_data(sigma):
         d_lin[idx, :, :] = d.detach().numpy().astype(np.float32)
 
     # Add noise to get observed data (-8.7466 dB)
-    logging.info('Adding band-limited noise')
     kernel = np.outer(imaging_setup.wavelet[:60], imaging_setup.wavelet[:60])
     for j in range(d_lin.shape[0]):
         e = sigma * np.random.randn(*d_lin.shape[1:])

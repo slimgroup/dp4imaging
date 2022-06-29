@@ -6,8 +6,7 @@ python run_imaging.py --phase sample --cuda 1
 """
 
 import argparse
-import os
-from dp4imaging.deep_prior_imaging import DeepPriorImaging
+from scripts.deep_prior_imaging import DeepPriorImaging
 
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('--max_itr',
@@ -67,24 +66,16 @@ def main():
     # Ensure that initial learning rate is not less than final learning rate.
     if args.lr < args.lr_final:
         ValueError(f'`lr` ({args.lr}) must not be smaller than '
-                   '`lr_final ({args.lr_final}).')
+                   f'`lr_final ({args.lr_final}).')
 
-    # Defining path to checkpoints and intermediates figures for debugging.
-    args.checkpoint_path = os.path.join('checkpoint/', args.experiment)
-    args.figs_path = os.path.join('results/', args.experiment)
-
-    # Creating needed directories to save intermediate results
-    if not os.path.exists(args.checkpoint_path):
-        os.makedirs(args.checkpoint_path)
-    if not os.path.exists(args.figs_path):
-        os.makedirs(args.figs_path)
+    # Experiment name according to input arguments.
+    args.experiment = (f'{args.experiment}_max_itr-{args.max_itr}_sigma'
+                       f'-{args.sigma}_lr-{args.lr}_lr_final-{args.lr_final}_'
+                       f'wd-{args.wd}_gamma-{args.gamma}')
 
     if args.phase == 'sample':
         imaging_instance = DeepPriorImaging(args)
         imaging_instance.sample(args)
-
-    # elif args.phase == 'inference':
-        # inference(args)
 
 
 if __name__ == '__main__':

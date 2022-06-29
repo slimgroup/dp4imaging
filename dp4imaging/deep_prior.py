@@ -13,7 +13,7 @@ g(z)
 from math import floor, ceil
 import numpy as np
 import torch
-from typing import List, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 
 def add_module(self, module: torch.nn.Module):
@@ -132,8 +132,8 @@ class View(torch.nn.Module):
 def pad_and_conv(c_in: int,
                  c_out: int,
                  kernel_size: int,
-                 stride: int = 1,
-                 bias: bool = True) -> torch.nn.Module:
+                 stride: Optional[int] = 1,
+                 bias: Optional[bool] = True) -> torch.nn.Module:
     """A utility function to define a 2D convolutional layer with padding.
 
     Args:
@@ -311,19 +311,19 @@ class DeepPrior(torch.nn.Module):
 
     def __init__(self,
                  input_shape: Sequence,
-                 ch_in: int = 3,
-                 ch_out: int = 1,
-                 ch_encoding: Union[int, Tuple, List] = (16, 32, 64),
-                 ch_decoding: Union[int, Tuple, List] = (16, 32, 64),
-                 ch_skip: Union[int, Tuple, List] = (0, 0, 64),
-                 kernel_size_encoding: Union[int, Tuple, List] = 5,
-                 kernel_size_decoding: Union[int, Tuple, List] = 5,
-                 kernel_size_skip: int = 1,
-                 bias: bool = True,
-                 upsample_mode: str = 'nearest',
-                 activation_fn: torch.nn.Module = torch.nn.LeakyReLU(
+                 ch_in: Optional[int] = 3,
+                 ch_out: Optional[int] = 1,
+                 ch_encoding: Optional[Union[int, Tuple, List]] = (16, 32, 64),
+                 ch_decoding: Optional[Union[int, Tuple, List]] = (16, 32, 64),
+                 ch_skip: Optional[Union[int, Tuple, List]] = (0, 0, 64),
+                 kernel_size_encoding: Optional[Union[int, Tuple, List]] = 5,
+                 kernel_size_decoding: Optional[Union[int, Tuple, List]] = 5,
+                 kernel_size_skip: Optional[int] = 1,
+                 bias: Optional[bool] = True,
+                 upsample_mode: Optional[str] = 'nearest',
+                 activation_fn: Optional[torch.nn.Module] = torch.nn.LeakyReLU(
                      0.2, inplace=True),
-                 scaling_factor: float = 1.0 / 40.0):
+                 scaling_factor: Optional[float] = 1.0 / 40.0):
         """Initializes a DeepPrior object.
 
         Args:

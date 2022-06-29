@@ -1,14 +1,18 @@
-import typing
+"""Utility functions for the training process.
+"""
+
 import argparse
-import os
 import h5py
-import torch
 import numpy as np
+import os
+import torch
+from typing import List, Optional, Tuple
+
+from dp4imaging.project_path import checkpointsdir, datadir
 
 
-def get_velocity(vel_path: str = os.path.join(
-    os.path.expanduser("~"), "data")) -> typing.Tuple[
-        np.ndarray, np.ndarray, typing.Tuple, typing.Tuple, typing.Tuple]:
+def get_velocity(vel_path: Optional[str] = datadir("velocity_model")) -> Tuple[
+        np.ndarray, np.ndarray, Tuple[float], Tuple[int], Tuple[float]]:
     """Downloads and returns a velocity model.
 
     Args:
@@ -23,10 +27,7 @@ def get_velocity(vel_path: str = os.path.join(
         shape: A tuple containing the shape of the model.
         origin: A tuple containing the origin of the model.
     """
-
-    if not os.path.exists(vel_path):
-        os.makedirs(vel_path)
-
+    # Path to velocity model.
     vel_file = os.path.join(vel_path, 'parihaka_model_high-freq.h5')
 
     if not os.path.exists(vel_file):
@@ -43,7 +44,7 @@ def get_velocity(vel_path: str = os.path.join(
     return m0, dm, spacing, shape, origin
 
 
-def setup_sample_file(args: argparse.Namespace, shape: typing.Tuple,
+def setup_sample_file(args: argparse.Namespace, shape: Tuple[int],
                       max_samples: int):
     """Setting up an HDF5 file to write samples.
 
@@ -54,10 +55,8 @@ def setup_sample_file(args: argparse.Namespace, shape: typing.Tuple,
             will be stored.
     """
     # Path to the file that samples will be written to.
-    samples_file_path = os.path.join(args.checkpoint_path, 'samples.hdf5')
-
-    # Samples file.
-    samples_file = h5py.File(samples_file_path, 'w')
+    samples_file = h5py.File(
+        os.path.join(checkpointsdir(args.experiment), 'samples.hdf5'), 'w')
     dataset_shape = (max_samples, shape[0], shape[1])
 
     # HDF5 dataset for samples.
@@ -70,9 +69,9 @@ def setup_sample_file(args: argparse.Namespace, shape: typing.Tuple,
     samples_file.close()
 
 
-def save_checkpoint(args: argparse.Namespace, obj_log: typing.List[float],
-                    error_log: typing.List, G: torch.nn.Module,
-                    z: torch.Tensor, samples_buffer: typing.List[np.ndarray]):
+def save_checkpoint(args: argparse.Namespace, obj_log: List[float],
+                    error_log: List[float], G: torch.nn.Module,
+                    z: torch.Tensor, samples_buffer: List[np.ndarray]):
     """Saves the current state of the training/sampling process.
 
     Saves intermediate results, such as network parameters and training logs. It
@@ -100,12 +99,13 @@ def save_checkpoint(args: argparse.Namespace, obj_log: typing.List[float],
             'error_log': error_log,
             'model_state_dict': state_dict,
             'z': z
-        }, os.path.join(args.checkpoint_path, 'checkpoint.pth'))
+        }, os.path.join(checkpointsdir(args.experiment), 'checkpoint.pth'))
 
     # Save smaples in buffer
     if len(samples_buffer) > 0:
-        samples_file_path = os.path.join(args.checkpoint_path, 'samples.hdf5')
-        samples_file = h5py.File(samples_file_path, 'r+')
+        samples_file = h5py.File(
+            os.path.join(checkpointsdir(args.experiment), 'samples.hdf5'),
+            'r+')
         num_samples_saved = samples_file["num_samples"]
 
         shape = samples_file['samples'].shape[1:]
@@ -120,9 +120,13 @@ def save_checkpoint(args: argparse.Namespace, obj_log: typing.List[float],
         samples_file.close()
 
 
-def decay_fn(args):
+def decay_fn(args: argparse.Namespace):
     """
     Learning rate scheduler
+
+    Returns:
+        A function that takes in the current epoch and returns the learning
+            rate.
     """
     if args.lr == args.lr_final:
 

@@ -10,7 +10,7 @@ sampler.step()
 
 import torch
 from torch.optim.optimizer import Optimizer
-import typing
+from typing import Generator, Optional
 
 class PreconditionedSGLD(Optimizer):
     """Preconditioned stochastic gradient Langevin dynamics.
@@ -26,11 +26,11 @@ class PreconditionedSGLD(Optimizer):
     """
 
     def __init__(self,
-                 params: typing.Generator,
-                 lr: float = 1e-2,
-                 beta: float = 0.99,
-                 Lambda: float = 1e-15,
-                 weight_decay: float = 0.0):
+                 params: Generator,
+                 lr: Optional[float] = 1e-2,
+                 beta: Optional[float] = 0.99,
+                 Lambda: Optional[float] = 1e-15,
+                 weight_decay: Optional[float] = 0.0):
         """Initializes a PreconditionedSGLD object.
 
         Args:
