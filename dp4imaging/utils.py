@@ -32,7 +32,7 @@ def get_velocity(vel_path: Optional[str] = datadir("velocity_model")) -> Tuple[
 
     if not os.path.exists(vel_file):
         os.system("wget https://www.dropbox.com/s/eouo2awl156vc94/"
-                  "parihaka_model_high-freq.h5 -O" + vel_file)
+                  "parihaka_model_high-freq.h5 --no-check-certificate -O" + vel_file)
 
     spacing = (25.0, 12.5)
 
