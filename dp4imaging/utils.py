@@ -1,5 +1,4 @@
-"""Utility functions for the training process.
-"""
+"""Utility functions for the training process."""
 
 import argparse
 import h5py
@@ -11,8 +10,9 @@ from typing import List, Optional, Tuple
 from dp4imaging.project_path import checkpointsdir, datadir
 
 
-def get_velocity(vel_path: Optional[str] = datadir("velocity_model")) -> Tuple[
-        np.ndarray, np.ndarray, Tuple[float], Tuple[int], Tuple[float]]:
+def get_velocity(
+    vel_path: Optional[str] = datadir("velocity_model"),
+) -> Tuple[np.ndarray, np.ndarray, Tuple[float], Tuple[int], Tuple[float]]:
     """Downloads and returns a velocity model.
 
     Args:
@@ -28,24 +28,27 @@ def get_velocity(vel_path: Optional[str] = datadir("velocity_model")) -> Tuple[
         origin: A tuple containing the origin of the model.
     """
     # Path to velocity model.
-    vel_file = os.path.join(vel_path, 'parihaka_model_high-freq.h5')
+    vel_file = os.path.join(vel_path, "parihaka_model_high-freq.h5")
 
     if not os.path.exists(vel_file):
-        os.system("wget https://www.dropbox.com/s/eouo2awl156vc94/"
-                  "parihaka_model_high-freq.h5 --no-check-certificate -O" + vel_file)
+        os.system(
+            f"wget 'https://www.dropbox.com/scl/fi/dv6zeweeiy7z82ox01yrc/parihaka_model_high-freq.h5?rlkey=b764s345bn2s5vpvn813kbhjl&st=fb140cx8&dl=0' "
+            f"--no-check-certificate -O {vel_file}"
+        )
 
     spacing = (25.0, 12.5)
 
-    m0 = np.transpose(h5py.File(vel_file, 'r')['m0'][...])
-    dm = np.transpose(h5py.File(vel_file, 'r')['dm'][...])
-    shape = h5py.File(vel_file, 'r')['n'][...][::-1]
-    origin = (0., 0.)
+    m0 = np.transpose(h5py.File(vel_file, "r")["m0"][...])
+    dm = np.transpose(h5py.File(vel_file, "r")["dm"][...])
+    shape = h5py.File(vel_file, "r")["n"][...][::-1]
+    origin = (0.0, 0.0)
 
     return m0, dm, spacing, shape, origin
 
 
-def setup_sample_file(args: argparse.Namespace, shape: Tuple[int],
-                      max_samples: int):
+def setup_sample_file(
+    args: argparse.Namespace, shape: Tuple[int], max_samples: int
+):
     """Setting up an HDF5 file to write samples.
 
     Args:
@@ -56,22 +59,29 @@ def setup_sample_file(args: argparse.Namespace, shape: Tuple[int],
     """
     # Path to the file that samples will be written to.
     samples_file = h5py.File(
-        os.path.join(checkpointsdir(args.experiment), 'samples.hdf5'), 'w')
+        os.path.join(checkpointsdir(args.experiment), "samples.hdf5"), "w"
+    )
     dataset_shape = (max_samples, shape[0], shape[1])
 
     # HDF5 dataset for samples.
-    samples_file.create_dataset('samples', dataset_shape, dtype=np.float32)
+    samples_file.create_dataset("samples", dataset_shape, dtype=np.float32)
 
     # HDF5 dataset keeping track of number of samples saved so far.
-    num_samples_saved = samples_file.create_dataset('num_samples', [1],
-                                                    dtype=int)
+    num_samples_saved = samples_file.create_dataset(
+        "num_samples", [1], dtype=int
+    )
     num_samples_saved[0] = 0
     samples_file.close()
 
 
-def save_checkpoint(args: argparse.Namespace, obj_log: List[float],
-                    error_log: List[float], G: torch.nn.Module,
-                    z: torch.Tensor, samples_buffer: List[np.ndarray]):
+def save_checkpoint(
+    args: argparse.Namespace,
+    obj_log: List[float],
+    error_log: List[float],
+    G: torch.nn.Module,
+    z: torch.Tensor,
+    samples_buffer: List[np.ndarray],
+):
     """Saves the current state of the training/sampling process.
 
     Saves intermediate results, such as network parameters and training logs. It
@@ -95,26 +105,31 @@ def save_checkpoint(args: argparse.Namespace, obj_log: List[float],
     # Save intermediate network weights and training logs
     torch.save(
         {
-            'obj_log': obj_log,
-            'error_log': error_log,
-            'model_state_dict': state_dict,
-            'z': z
-        }, os.path.join(checkpointsdir(args.experiment), 'checkpoint.pth'))
+            "obj_log": obj_log,
+            "error_log": error_log,
+            "model_state_dict": state_dict,
+            "z": z,
+        },
+        os.path.join(checkpointsdir(args.experiment), "checkpoint.pth"),
+    )
 
     # Save smaples in buffer
     if len(samples_buffer) > 0:
         samples_file = h5py.File(
-            os.path.join(checkpointsdir(args.experiment), 'samples.hdf5'),
-            'r+')
+            os.path.join(checkpointsdir(args.experiment), "samples.hdf5"), "r+"
+        )
         num_samples_saved = samples_file["num_samples"]
 
-        shape = samples_file['samples'].shape[1:]
+        shape = samples_file["samples"].shape[1:]
         samples_buffer = np.array(samples_buffer)
         samples_buffer = samples_buffer.reshape(-1, shape[0], shape[1])
 
-        samples_file['samples'][num_samples_saved[0]:(num_samples_saved[0] +
-                                                      samples_buffer.shape[0]),
-                                ...] = samples_buffer
+        samples_file["samples"][
+            num_samples_saved[0] : (
+                num_samples_saved[0] + samples_buffer.shape[0]
+            ),
+            ...,
+        ] = samples_buffer
 
         num_samples_saved[0] += samples_buffer.shape[0]
         samples_file.close()
@@ -135,13 +150,13 @@ def decay_fn(args: argparse.Namespace):
     else:
         lag = 0
         max_itr_lag = args.max_itr - lag
-        b = max_itr_lag / ((args.lr_final / args.lr)**(1 / args.gamma) - 1.0)
+        b = max_itr_lag / ((args.lr_final / args.lr) ** (1 / args.gamma) - 1.0)
         a = args.lr / (b**args.gamma)
 
         def lr_fn(t, a=a, b=b, gamma=args.gamma, lag=lag):
             if t < lag:
                 return args.lr
             else:
-                return a * ((b + t)**gamma)
+                return a * ((b + t) ** gamma)
 
     return lr_fn
