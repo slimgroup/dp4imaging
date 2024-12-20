@@ -25,6 +25,15 @@ After the above steps, you can run the example scripts by just
 activating the environment, i.e., `conda activate dp4imaging`, the
 following times.
 
+
+## Example
+
+To run the Parihaka example, execute the following.
+
+```bash
+python scripts/run_imaging.py
+```
+
 ## Questions
 
 Please contact alisk@gatech.edu for questions.
