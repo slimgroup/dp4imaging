@@ -6,7 +6,7 @@ python run_imaging.py --phase sample --cuda 1
 """
 
 import argparse
-from scripts.deep_prior_imaging import DeepPriorImaging
+from deep_prior_imaging import DeepPriorImaging
 
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('--max_itr',
